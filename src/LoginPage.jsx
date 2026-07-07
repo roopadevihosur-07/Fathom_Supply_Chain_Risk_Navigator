@@ -28,9 +28,9 @@ const LoginPage = () => {
   };
 
   const demoAccounts = [
-    { email: 'admin@fathom.com', password: 'admin123', role: 'Admin', desc: 'Full platform access' },
-    { email: 'manager@fathom.com', password: 'manager123', role: 'Manager', desc: 'Analysis & insights' },
-    { email: 'user@fathom.com', password: 'user123', role: 'User', desc: 'Report concerns' },
+    { email: 'admin@fathom.com', password: 'Fathom@2026!', role: 'Admin', desc: 'Full platform access' },
+    { email: 'manager@fathom.com', password: 'Fathom@2026!', role: 'Manager', desc: 'Analysis & insights' },
+    { email: 'user@fathom.com', password: 'Fathom@2026!', role: 'User', desc: 'Report concerns' },
   ];
 
   const features = [
@@ -518,28 +518,41 @@ const LoginPage = () => {
                   borderTop: '1px solid rgba(99, 102, 241, 0.1)',
                   paddingTop: '20px',
                 }}>
+                  <div style={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: '#6366F1',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    marginBottom: '12px',
+                  }}>
+                    📋 Demo Accounts (Judges)
+                  </div>
                   <button
                     onClick={() => setShowDemo(!showDemo)}
                     style={{
                       width: '100%',
-                      background: 'transparent',
-                      border: 'none',
+                      background: 'rgba(99, 102, 241, 0.08)',
+                      border: '1px solid rgba(99, 102, 241, 0.2)',
                       color: '#6366F1',
                       fontSize: '13px',
                       fontWeight: 600,
                       cursor: 'pointer',
-                      padding: '8px',
+                      padding: '12px 14px',
                       marginBottom: '16px',
                       transition: 'all 0.2s ease',
+                      borderRadius: '10px',
                     }}
                     onMouseEnter={(e) => {
-                      e.target.style.color = '#0D9488';
+                      e.target.style.background = 'rgba(99, 102, 241, 0.15)';
+                      e.target.style.borderColor = 'rgba(99, 102, 241, 0.4)';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.color = '#6366F1';
+                      e.target.style.background = 'rgba(99, 102, 241, 0.08)';
+                      e.target.style.borderColor = 'rgba(99, 102, 241, 0.2)';
                     }}
                   >
-                    {showDemo ? '← Hide Demo Accounts' : '→ Try Demo Accounts'}
+                    {showDemo ? '← Hide Demo Accounts' : '→ Click to View Demo Accounts'}
                   </button>
 
                   {showDemo && (
