@@ -11,10 +11,11 @@ const SuggestionsPage = () => {
   const { concerns, suggestions, addSuggestion } = useData();
   const { user } = useAuth();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (selectedConcernId && title.trim() && description.trim()) {
-      addSuggestion(parseInt(selectedConcernId), title, description, user.name);
+      console.log('💡 Creating suggestion:', { concern_id: selectedConcernId, title, description, proposed_by: user.name });
+      await addSuggestion(selectedConcernId, title, description, user.name);
       setTitle('');
       setDescription('');
       setSelectedConcernId('');

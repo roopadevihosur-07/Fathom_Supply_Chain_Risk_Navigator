@@ -11,10 +11,11 @@ const ConcernsPage = () => {
   const { concerns, addConcern } = useData();
   const { user } = useAuth();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (title.trim() && description.trim()) {
-      addConcern(title, description, riskLevel, user.name);
+      console.log('📝 Creating concern:', { title, description, riskLevel, reporter: user.name, reporter_id: user.id });
+      await addConcern(title, description, riskLevel, user.name, user.id);
       setTitle('');
       setDescription('');
       setRiskLevel('medium');
@@ -29,7 +30,7 @@ const ConcernsPage = () => {
       high: { bg: 'rgba(220, 38, 38, 0.1)', text: '#DC2626', label: 'High' },
       critical: { bg: 'rgba(153, 27, 27, 0.1)', text: '#7F1D1D', label: 'Critical' },
     };
-    return colors[level];
+    return colors[level] || colors.medium; // Default to medium if level not found
   };
 
   const getStatusColor = (status) => {
@@ -38,7 +39,7 @@ const ConcernsPage = () => {
       in_progress: { bg: 'rgba(217, 119, 6, 0.1)', text: '#D97706' },
       resolved: { bg: 'rgba(16, 185, 129, 0.1)', text: '#10B981' },
     };
-    return colors[status] || colors.open;
+    return colors[status] || colors.open; // Default to open if status not found
   };
 
   return (

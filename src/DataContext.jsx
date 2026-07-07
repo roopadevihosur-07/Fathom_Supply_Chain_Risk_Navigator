@@ -61,51 +61,88 @@ export const DataProvider = ({ children }) => {
 
   const addConcern = async (title, description, risk_level, reporter, reporter_id) => {
     try {
+      console.log('🔍 Adding concern to:', getUrl('concerns'));
+      console.log('📦 Payload:', { title, description, risk_level, reporter, reporter_id, status: 'open' });
+      console.log('🔐 Headers:', getHeaders());
+
       const res = await fetch(getUrl('concerns'), {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify({ title, description, risk_level, reporter, reporter_id, status: 'open' }),
       });
+
+      console.log('📊 Response status:', res.status);
       const data = await res.json();
+      console.log('✅ Response data:', data);
+
+      if (!res.ok) {
+        console.error('❌ API error:', data);
+        return null;
+      }
+
       const newItem = Array.isArray(data) ? data[0] : data;
       setConcerns([...concerns, newItem]);
       return newItem;
     } catch (error) {
-      console.error('Error adding concern:', error);
+      console.error('❌ Error adding concern:', error);
       return null;
     }
   };
 
   const addSuggestion = async (concern_id, title, description, proposed_by) => {
     try {
+      console.log('🔍 Adding suggestion to:', getUrl('suggestions'));
+      console.log('📦 Payload:', { concern_id, title, description, proposed_by, status: 'pending' });
+
       const res = await fetch(getUrl('suggestions'), {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify({ concern_id, title, description, proposed_by, status: 'pending' }),
       });
+
+      console.log('📊 Response status:', res.status);
       const data = await res.json();
+      console.log('✅ Response data:', data);
+
+      if (!res.ok) {
+        console.error('❌ API error:', data);
+        return null;
+      }
+
       const newItem = Array.isArray(data) ? data[0] : data;
       setSuggestions([...suggestions, newItem]);
       return newItem;
     } catch (error) {
-      console.error('Error adding suggestion:', error);
+      console.error('❌ Error adding suggestion:', error);
       return null;
     }
   };
 
   const addSolution = async (concern_id, title, description, cost, time_to_resolve, coverage, recommended, created_by) => {
     try {
+      console.log('🔍 Adding solution to:', getUrl('solutions'));
+      console.log('📦 Payload:', { concern_id, title, description, cost, time_to_resolve, coverage, recommended, created_by, status: 'active' });
+
       const res = await fetch(getUrl('solutions'), {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify({ concern_id, title, description, cost, time_to_resolve, coverage, recommended, created_by, status: 'active' }),
       });
+
+      console.log('📊 Response status:', res.status);
       const data = await res.json();
+      console.log('✅ Response data:', data);
+
+      if (!res.ok) {
+        console.error('❌ API error:', data);
+        return null;
+      }
+
       const newItem = Array.isArray(data) ? data[0] : data;
       setSolutions([...solutions, newItem]);
       return newItem;
     } catch (error) {
-      console.error('Error adding solution:', error);
+      console.error('❌ Error adding solution:', error);
       return null;
     }
   };

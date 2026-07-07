@@ -16,22 +16,24 @@ const SolutionsPage = () => {
   const { concerns, solutions, suggestions, addSolution, updateSolution } = useData();
   const { user } = useAuth();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (selectedConcernId && title.trim() && description.trim() && cost && timeToResolve && coverage.trim()) {
       if (editingId) {
-        updateSolution(editingId, {
+        console.log('✏️ Updating solution:', { id: editingId, title, cost });
+        await updateSolution(editingId, {
           title,
           description,
           cost: parseInt(cost),
-          timeToResolve: parseInt(timeToResolve),
+          time_to_resolve: parseInt(timeToResolve),
           coverage,
           recommended,
         });
         setEditingId(null);
       } else {
-        addSolution(
-          parseInt(selectedConcernId),
+        console.log('🔧 Creating solution:', { concern_id: selectedConcernId, title, cost, time_to_resolve: timeToResolve });
+        await addSolution(
+          selectedConcernId,
           title,
           description,
           parseInt(cost),
