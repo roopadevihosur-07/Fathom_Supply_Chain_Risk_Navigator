@@ -52,7 +52,19 @@ Fathom gives you:
 - Cypher query visibility for transparency
 - Example: Hsinchu disruption affects 8 downstream nodes, $4.2M revenue at risk
 
-### 3. **Multi-Role Platform with Real Authentication**
+### 3. **Interactive Graph Analytics** (Admin Only)
+- **Cytoscape.js visualization** of supply chain network
+- **Real-time risk scoring** for all nodes:
+  - Scores based on downstream impact, revenue exposure, and node type
+  - Risk levels: Critical (🔴), High (🟠), Medium (🟡), Low (🟢)
+  - Node size proportional to risk score
+- **Cascade history tracking** — Records all disruption simulations with timestamps and impacts
+- **Custom Cypher query editor** — Execute queries directly on Neo4j
+  - Built-in examples for common patterns
+  - Advanced querying for deep analysis
+- Click any node to simulate disruption and record cascade event
+
+### 4. **Multi-Role Platform with Real Authentication**
 Three distinct user types with specialized capabilities:
 
 #### 👤 **User Role**
@@ -74,8 +86,9 @@ Three distinct user types with specialized capabilities:
 - Approve and implement responses
 - View complete incident history
 - Access disruption response simulator
+- **Access Graph Analytics** with risk scoring and custom queries
 
-### 4. **Persistent Data Backend**
+### 5. **Persistent Data Backend**
 - **Butterbase** database with 4 core tables:
   - `profiles` — User roles and permissions
   - `concerns` — Supply chain issues (title, description, risk_level, status)
@@ -85,13 +98,13 @@ Three distinct user types with specialized capabilities:
 - Real-time multi-user synchronization
 - Role-based access control
 
-### 5. **Intelligent Mitigation Ranking**
+### 6. **Intelligent Mitigation Ranking**
 - Cost-to-delay analysis
 - Network coverage assessment
 - Time-to-resolution estimation
 - Recommended solution highlighting
 
-### 6. **Incident Tracking & Reporting**
+### 7. **Incident Tracking & Reporting**
 - Automatic incident logging
 - Cost breakdown analysis
 - Timeline tracking
@@ -388,6 +401,8 @@ Fathom/
 
 - [INTEGRATION_STEPS.md](./INTEGRATION_STEPS.md) — Complete setup guide
 - [BUTTERBASE_SETUP.md](./BUTTERBASE_SETUP.md) — Butterbase configuration
+- [GRAPH_ANALYTICS.md](./GRAPH_ANALYTICS.md) — Neo4j Graph Analytics guide
+- [CREDENTIALS.md](./CREDENTIALS.md) — Demo account credentials
 - [Neo4j Schema](./neo4j-schema.cypher) — Graph structure
 
 ---
