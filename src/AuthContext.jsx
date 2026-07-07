@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { butterbase } from './lib/butterbaseClient';
 
 const AuthContext = createContext();
 
@@ -64,8 +63,12 @@ export const AuthProvider = ({ children }) => {
 
       const response = await fetch(`${apiUrl}/auth/${appId}/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: JSON.stringify({ email, password }),
+        credentials: 'include',
       });
 
       console.log('📊 Response status:', response.status);
