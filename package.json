@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "@butterbase/sdk": "^2.8.1",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.263.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-leaflet": "^4.2.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.0",

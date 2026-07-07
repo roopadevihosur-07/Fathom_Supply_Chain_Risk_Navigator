@@ -10,6 +10,7 @@ import LoginPage from "./LoginPage";
 import ConcernsPage from "./ConcernsPage";
 import SuggestionsPage from "./SuggestionsPage";
 import SolutionsPage from "./SolutionsPage";
+import GeographicMap from "./GeographicMap";
 
 /* ---------------------------------------------------------------------- */
 /* DATA MODEL                                                              */
@@ -577,6 +578,9 @@ function MapPage({ phase }) {
     ...n,
     status: phase === "calm" ? "Healthy" : phase === "resolved" ? "Resolved" : CASCADE.has(n.id) ? (n.id === ROOT ? "Root cause" : "Affected") : "Healthy",
   }));
+
+  const affectedNodeIds = phase === "calm" || phase === "resolved" ? [] : [...CASCADE.keys()].filter(id => id !== ROOT);
+
   return (
     <div>
       <div className="f-page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -588,11 +592,31 @@ function MapPage({ phase }) {
         <StatusPill phase={phase} />
       </div>
 
+      {/* Geographic Map */}
       <div className="f-card" style={{ padding: 0, overflow: "hidden", marginBottom: 20 }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(99, 102, 241, 0.1)" }}>
+          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#1F2937", display: "flex", alignItems: "center", gap: 8 }}>
+            <MapPin size={18} color="#6366F1" />
+            Global Geographic Distribution
+          </h3>
+        </div>
+        <GeographicMap phase={phase} affectedNodes={affectedNodeIds} />
+      </div>
+
+      {/* Abstract Network Visualization */}
+      <div className="f-card" style={{ padding: 0, overflow: "hidden", marginBottom: 20 }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(99, 102, 241, 0.1)" }}>
+          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#1F2937", display: "flex", alignItems: "center", gap: 8 }}>
+            <Network size={18} color="#6366F1" />
+            Dependency Graph Topology
+          </h3>
+        </div>
         <NetworkMap phase={phase} />
       </div>
 
+      {/* Node Details Table */}
       <div className="f-card">
+        <h3 style={{ margin: "0 0 16px 0", fontSize: 14, fontWeight: 700, color: "#1F2937" }}>Network Nodes Details</h3>
         <table className="f-table">
           <thead>
             <tr><th>Node</th><th>Type</th><th>Region</th><th>Status</th></tr>
