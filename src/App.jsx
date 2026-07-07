@@ -11,6 +11,7 @@ import ConcernsPage from "./ConcernsPage";
 import SuggestionsPage from "./SuggestionsPage";
 import SolutionsPage from "./SolutionsPage";
 import GeographicMap from "./GeographicMap";
+import GraphAnalyticsPage from "./GraphAnalyticsPage";
 
 /* ---------------------------------------------------------------------- */
 /* DATA MODEL                                                              */
@@ -961,6 +962,7 @@ function DashboardApp() {
       return [
         ...commonNav,
         { id: "disruption", label: "Disruption Response", icon: AlertTriangle },
+        { id: "analytics", label: "Graph Analytics", icon: BarChart3 },
         { id: "mitigation", label: "Mitigation & Decision", icon: Shield },
         { id: "report", label: "Incident Report", icon: FileText },
         { id: "solutions", label: "Manage Solutions", icon: Wrench },
@@ -1016,6 +1018,7 @@ function DashboardApp() {
         {page === "overview" && <OverviewPage phase={phase} affectedNodeIds={affectedNodeIds} go={setPage} />}
         {page === "map" && <MapPage phase={phase} affectedNodeIds={affectedNodeIds} />}
         {page === "disruption" && <DisruptionPage phase={phase} affectedNodeIds={affectedNodeIds} trigger={trigger} go={setPage} />}
+        {page === "analytics" && <GraphAnalyticsPage />}
         {page === "mitigation" && <MitigationPage phase={phase} affectedNodeIds={affectedNodeIds} resolve={resolve} go={setPage} />}
         {page === "report" && <ReportPage phase={phase} affectedNodeIds={affectedNodeIds} mitigationId={mitigationId} go={setPage} />}
         {page === "concerns" && <ConcernsPage />}
