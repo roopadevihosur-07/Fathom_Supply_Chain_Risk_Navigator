@@ -6,10 +6,13 @@ export default defineConfig({
   plugins: [
     react(),
     nodePolyfills({
+      include: ['crypto', 'util'],
       globals: {
         global: true,
         process: true,
         Buffer: true,
+        __dirname: true,
+        __filename: true,
       },
     })
   ],
@@ -19,6 +22,12 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true
-  }
+    sourcemap: true,
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
+  },
+  optimizeDeps: {
+    include: ['crypto'],
+  },
 })
