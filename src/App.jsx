@@ -318,11 +318,11 @@ function StatusPill({ phase }) {
   return <span className={`f-pill ${phase}`}><Icon size={13} /> {text}</span>;
 }
 
-function NetworkMap({ phase, compact }) {
+function NetworkMap({ phase, affectedNodeIds = [], compact }) {
   const nodeState = (id) => {
     if (phase === "calm") return "calm";
     if (phase === "resolved") return "resolved";
-    return CASCADE.has(id) ? "affected" : "calm";
+    return affectedNodeIds.includes(id) ? "affected" : "calm";
   };
   const colorFor = (state) =>
     state === "affected" ? "var(--coral)" : state === "resolved" ? "var(--green)" : "var(--teal)";
@@ -493,7 +493,7 @@ function NetworkMap({ phase, compact }) {
 /* PAGES                                                                   */
 /* ---------------------------------------------------------------------- */
 
-function OverviewPage({ phase, go }) {
+function OverviewPage({ phase, affectedNodeIds, go }) {
   const centrality = [
     { name: "Hsinchu Semiconductor Co.", pct: 100 },
     { name: "Shenzhen Circuit Assembly", pct: 67 },
@@ -517,7 +517,7 @@ function OverviewPage({ phase, go }) {
             <div style={{ fontWeight: 700, fontSize: 14 }}>Live Network Preview</div>
             <StatusPill phase={phase} />
           </div>
-          <NetworkMap phase={phase} compact />
+          <NetworkMap phase={phase} affectedNodeIds={affectedNodeIds} compact />
           <div style={{ padding: "14px 20px", borderTop: "1px solid var(--border)" }}>
             <button className="f-btn primary" onClick={() => go("map")}>
               Enter full command center <ArrowRight size={14} />
@@ -573,13 +573,11 @@ function OverviewPage({ phase, go }) {
   );
 }
 
-function MapPage({ phase }) {
+function MapPage({ phase, affectedNodeIds = [] }) {
   const rows = NODES.map((n) => ({
     ...n,
-    status: phase === "calm" ? "Healthy" : phase === "resolved" ? "Resolved" : CASCADE.has(n.id) ? (n.id === ROOT ? "Root cause" : "Affected") : "Healthy",
+    status: phase === "calm" ? "Healthy" : phase === "resolved" ? "Resolved" : affectedNodeIds.includes(n.id) ? (n.id === "hsinchu" ? "Root cause" : "Affected") : "Healthy",
   }));
-
-  const affectedNodeIds = phase === "calm" || phase === "resolved" ? [] : [...CASCADE.keys()].filter(id => id !== ROOT);
 
   return (
     <div>
@@ -611,7 +609,7 @@ function MapPage({ phase }) {
             Dependency Graph Topology
           </h3>
         </div>
-        <NetworkMap phase={phase} />
+        <NetworkMap phase={phase} affectedNodeIds={affectedNodeIds} />
       </div>
 
       {/* Node Details Table */}
@@ -641,7 +639,7 @@ function MapPage({ phase }) {
   );
 }
 
-function DisruptionPage({ phase, trigger, go }) {
+function DisruptionPage({ phase, affectedNodeIds, trigger, go }) {
   const [revealedSteps, setRevealedSteps] = useState(phase === "calm" ? 0 : REASONING_STEPS.length);
   const [showCypher, setShowCypher] = useState(false);
   const timerRef = useRef(null);
@@ -678,7 +676,7 @@ function DisruptionPage({ phase, trigger, go }) {
 
       <div className="f-grid-2">
         <div className="f-card" style={{ padding: 0, overflow: "hidden" }}>
-          <NetworkMap phase={phase} />
+          <NetworkMap phase={phase} affectedNodeIds={affectedNodeIds} />
         </div>
 
         <div className="f-card">
@@ -726,7 +724,7 @@ ORDER BY hops ASC`}</div>
   );
 }
 
-function MitigationPage({ phase, resolve, go }) {
+function MitigationPage({ phase, affectedNodeIds, resolve, go }) {
   const [selected, setSelected] = useState("reroute");
   const [paying, setPaying] = useState(false);
 
@@ -810,7 +808,7 @@ function MitigationPage({ phase, resolve, go }) {
   );
 }
 
-function ReportPage({ phase, mitigationId, go }) {
+function ReportPage({ phase, affectedNodeIds, mitigationId, go }) {
   if (phase !== "resolved") {
     return (
       <div>
@@ -913,11 +911,45 @@ function DashboardApp() {
   const [page, setPage] = useState("overview");
   const [phase, setPhase] = useState("calm");
   const [mitigationId, setMitigationId] = useState(null);
-  const { user, logout } = useAuth();
+  const [affectedNodeIds, setAffectedNodeIds] = useState([]);
+  const { user, logout, session } = useAuth();
 
-  const trigger = () => setPhase("active");
+  const trigger = async () => {
+    try {
+      setPhase("active");
+
+      if (!session || !session.access_token) {
+        console.error('❌ No session available');
+        return;
+      }
+
+      const appId = import.meta.env.VITE_BUTTERBASE_APP_ID;
+      const apiUrl = import.meta.env.VITE_BUTTERBASE_API_URL;
+
+      console.log('🌪️ Triggering Neo4j cascade query...');
+
+      const res = await fetch(
+        `${apiUrl}/v1/${appId}/fn/neo4j-cascade`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ rootNodeId: 'hsinchu' }),
+        }
+      );
+
+      const data = await res.json();
+      console.log('✅ Cascade result:', data);
+      setAffectedNodeIds(data.cascade || []);
+    } catch (error) {
+      console.error('❌ Error triggering cascade:', error);
+    }
+  };
+
   const resolve = (id) => { setMitigationId(id); setPhase("resolved"); };
-  const reset = () => { setPhase("calm"); setMitigationId(null); setPage("overview"); };
+  const reset = () => { setPhase("calm"); setMitigationId(null); setAffectedNodeIds([]); setPage("overview"); };
 
   const getRoleNav = () => {
     const commonNav = [
@@ -981,11 +1013,11 @@ function DashboardApp() {
       </div>
 
       <div className="f-main">
-        {page === "overview" && <OverviewPage phase={phase} go={setPage} />}
-        {page === "map" && <MapPage phase={phase} />}
-        {page === "disruption" && <DisruptionPage phase={phase} trigger={trigger} go={setPage} />}
-        {page === "mitigation" && <MitigationPage phase={phase} resolve={resolve} go={setPage} />}
-        {page === "report" && <ReportPage phase={phase} mitigationId={mitigationId} go={setPage} />}
+        {page === "overview" && <OverviewPage phase={phase} affectedNodeIds={affectedNodeIds} go={setPage} />}
+        {page === "map" && <MapPage phase={phase} affectedNodeIds={affectedNodeIds} />}
+        {page === "disruption" && <DisruptionPage phase={phase} affectedNodeIds={affectedNodeIds} trigger={trigger} go={setPage} />}
+        {page === "mitigation" && <MitigationPage phase={phase} affectedNodeIds={affectedNodeIds} resolve={resolve} go={setPage} />}
+        {page === "report" && <ReportPage phase={phase} affectedNodeIds={affectedNodeIds} mitigationId={mitigationId} go={setPage} />}
         {page === "concerns" && <ConcernsPage />}
         {page === "suggestions" && <SuggestionsPage />}
         {page === "solutions" && <SolutionsPage />}

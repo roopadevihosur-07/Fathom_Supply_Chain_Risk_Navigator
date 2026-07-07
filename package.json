@@ -11,8 +11,11 @@
   },
   "dependencies": {
     "@butterbase/sdk": "^2.8.1",
+    "dotenv": "^17.4.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.263.0",
+    "neo4j-driver": "^6.2.0",
+    "node-fetch": "^3.3.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.0"

@@ -1,102 +1,161 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
 const DataContext = createContext(null);
 
 export const DataProvider = ({ children }) => {
-  const [concerns, setConcerns] = useState([
-    {
-      id: 1,
-      title: 'Hsinchu supplier vulnerability',
-      description: 'Single point of failure in Taiwan semiconductor supply',
-      riskLevel: 'high',
-      reporter: 'User (John Doe)',
-      date: '2026-07-07',
-      status: 'open',
-    },
-  ]);
+  const { session } = useAuth();
+  const [concerns, setConcerns] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [solutions, setSolutions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [suggestions, setSuggestions] = useState([
-    {
-      id: 1,
-      concernId: 1,
-      title: 'Diversify supplier base',
-      description: 'Establish relationships with secondary suppliers in South Korea',
-      proposedBy: 'Manager (Sarah Smith)',
-      date: '2026-07-07',
-      status: 'pending',
-    },
-  ]);
+  const getHeaders = () => ({
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${session?.access_token || ''}`,
+  });
 
-  const [solutions, setSolutions] = useState([
-    {
-      id: 1,
-      concernId: 1,
-      title: 'Emergency reroute via secondary logistics partner',
-      description: 'Redirect component sourcing through pre-qualified backup supplier',
-      cost: 46000,
-      timeToResolve: 5,
-      coverage: 'Full network',
-      recommended: true,
-      createdBy: 'Admin',
-      status: 'active',
-    },
-  ]);
+  const getUrl = (table) => {
+    const appId = import.meta.env.VITE_BUTTERBASE_APP_ID;
+    const apiUrl = import.meta.env.VITE_BUTTERBASE_API_URL;
+    return `${apiUrl}/v1/${appId}/${table}`;
+  };
 
-  const addConcern = (title, description, riskLevel, reporter) => {
-    const newConcern = {
-      id: Math.max(...concerns.map(c => c.id), 0) + 1,
-      title,
-      description,
-      riskLevel,
-      reporter,
-      date: new Date().toISOString().split('T')[0],
-      status: 'open',
+  // Load all data from Butterbase
+  useEffect(() => {
+    if (!session) {
+      setConcerns([]);
+      setSuggestions([]);
+      setSolutions([]);
+      setLoading(false);
+      return;
+    }
+
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const headers = getHeaders();
+
+        const [concernsRes, suggestionsRes, solutionsRes] = await Promise.all([
+          fetch(getUrl('concerns'), { headers }),
+          fetch(getUrl('suggestions'), { headers }),
+          fetch(getUrl('solutions'), { headers }),
+        ]);
+
+        const concernsData = await concernsRes.json();
+        const suggestionsData = await suggestionsRes.json();
+        const solutionsData = await solutionsRes.json();
+
+        setConcerns(Array.isArray(concernsData) ? concernsData : []);
+        setSuggestions(Array.isArray(suggestionsData) ? suggestionsData : []);
+        setSolutions(Array.isArray(solutionsData) ? solutionsData : []);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
+      }
     };
-    setConcerns([...concerns, newConcern]);
-    return newConcern;
+
+    loadData();
+  }, [session]);
+
+  const addConcern = async (title, description, risk_level, reporter, reporter_id) => {
+    try {
+      const res = await fetch(getUrl('concerns'), {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ title, description, risk_level, reporter, reporter_id, status: 'open' }),
+      });
+      const data = await res.json();
+      const newItem = Array.isArray(data) ? data[0] : data;
+      setConcerns([...concerns, newItem]);
+      return newItem;
+    } catch (error) {
+      console.error('Error adding concern:', error);
+      return null;
+    }
   };
 
-  const addSuggestion = (concernId, title, description, proposedBy) => {
-    const newSuggestion = {
-      id: Math.max(...suggestions.map(s => s.id), 0) + 1,
-      concernId,
-      title,
-      description,
-      proposedBy,
-      date: new Date().toISOString().split('T')[0],
-      status: 'pending',
-    };
-    setSuggestions([...suggestions, newSuggestion]);
-    return newSuggestion;
+  const addSuggestion = async (concern_id, title, description, proposed_by) => {
+    try {
+      const res = await fetch(getUrl('suggestions'), {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ concern_id, title, description, proposed_by, status: 'pending' }),
+      });
+      const data = await res.json();
+      const newItem = Array.isArray(data) ? data[0] : data;
+      setSuggestions([...suggestions, newItem]);
+      return newItem;
+    } catch (error) {
+      console.error('Error adding suggestion:', error);
+      return null;
+    }
   };
 
-  const addSolution = (concernId, title, description, cost, timeToResolve, coverage, recommended, createdBy) => {
-    const newSolution = {
-      id: Math.max(...solutions.map(s => s.id), 0) + 1,
-      concernId,
-      title,
-      description,
-      cost,
-      timeToResolve,
-      coverage,
-      recommended,
-      createdBy,
-      status: 'active',
-    };
-    setSolutions([...solutions, newSolution]);
-    return newSolution;
+  const addSolution = async (concern_id, title, description, cost, time_to_resolve, coverage, recommended, created_by) => {
+    try {
+      const res = await fetch(getUrl('solutions'), {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ concern_id, title, description, cost, time_to_resolve, coverage, recommended, created_by, status: 'active' }),
+      });
+      const data = await res.json();
+      const newItem = Array.isArray(data) ? data[0] : data;
+      setSolutions([...solutions, newItem]);
+      return newItem;
+    } catch (error) {
+      console.error('Error adding solution:', error);
+      return null;
+    }
   };
 
-  const updateSolution = (solutionId, updates) => {
-    setSolutions(solutions.map(s => s.id === solutionId ? { ...s, ...updates } : s));
+  const updateSolution = async (id, updates) => {
+    try {
+      const res = await fetch(`${getUrl('solutions')}?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify(updates),
+      });
+      const data = await res.json();
+      setSolutions(solutions.map(s => s.id === id ? { ...s, ...updates } : s));
+      return data;
+    } catch (error) {
+      console.error('Error updating solution:', error);
+      return null;
+    }
   };
 
-  const updateConcern = (concernId, status) => {
-    setConcerns(concerns.map(c => c.id === concernId ? { ...c, status } : c));
+  const updateConcern = async (id, status) => {
+    try {
+      const res = await fetch(`${getUrl('concerns')}?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify({ status }),
+      });
+      const data = await res.json();
+      setConcerns(concerns.map(c => c.id === id ? { ...c, status } : c));
+      return data;
+    } catch (error) {
+      console.error('Error updating concern:', error);
+      return null;
+    }
   };
 
-  const updateSuggestion = (suggestionId, status) => {
-    setSuggestions(suggestions.map(s => s.id === suggestionId ? { ...s, status } : s));
+  const updateSuggestion = async (id, status) => {
+    try {
+      const res = await fetch(`${getUrl('suggestions')}?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify({ status }),
+      });
+      const data = await res.json();
+      setSuggestions(suggestions.map(s => s.id === id ? { ...s, status } : s));
+      return data;
+    } catch (error) {
+      console.error('Error updating suggestion:', error);
+      return null;
+    }
   };
 
   return (
@@ -104,6 +163,7 @@ export const DataProvider = ({ children }) => {
       concerns,
       suggestions,
       solutions,
+      loading,
       addConcern,
       addSuggestion,
       addSolution,

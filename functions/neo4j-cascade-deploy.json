@@ -1,0 +1,12 @@
+{
+  "name": "neo4j-cascade",
+  "description": "Query Neo4j for supply chain cascade analysis",
+  "runtime": "typescript",
+  "code": "import { neo4j } from 'neo4j-driver';\n\nexport async function handler(event) {\n  const { rootNodeId } = event.body || event;\n\n  if (!rootNodeId) {\n    throw new Error('rootNodeId is required');\n  }\n\n  const driver = neo4j.driver(\n    process.env.NEO4J_URI,\n    neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD)\n  );\n\n  try {\n    const session = driver.session({\n      database: process.env.NEO4J_DATABASE || 'neo4j',\n    });\n\n    const result = await session.run(\n      `MATCH path = (root {id: $rootNodeId})-[*]->(affected)\n       WITH DISTINCT affected.id as nodeId\n       RETURN COLLECT(nodeId) as cascade`,\n      { rootNodeId }\n    );\n\n    const cascade = result.records[0]?.get('cascade') || [rootNodeId];\n\n    const revenueMap = {\n      na_retail: 2800000,\n      eu_retail: 1400000,\n    };\n\n    const revenueAtRisk = cascade.reduce((total, nodeId) => {\n      return total + (revenueMap[nodeId] || 0);\n    }, 0);\n\n    await session.close();\n\n    return {\n      cascade: [rootNodeId, ...cascade.filter((id) => id !== rootNodeId)],\n      revenueAtRisk,\n      affectedCount: cascade.length,\n    };\n  } finally {\n    await driver.close();\n  }\n}",
+  "envVars": {
+    "NEO4J_URI": "neo4j+s://daa410c7.databases.neo4j.io",
+    "NEO4J_USER": "daa410c7",
+    "NEO4J_PASSWORD": "3C806qkAQovM45tS9kasHORPGdBD6ubxGjO_WXrGDtI",
+    "NEO4J_DATABASE": "daa410c7"
+  }
+}
