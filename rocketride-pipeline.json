@@ -1,0 +1,84 @@
+{
+  "name": "fathom-disruption-response",
+  "description": "Ingests a supply chain disruption signal, traces the blast radius in Neo4j, quantifies revenue at risk, and ranks mitigations.",
+  "version": "1.0.0",
+  "trigger": {
+    "type": "http",
+    "method": "POST",
+    "path": "/pipelines/fathom-disruption-response/run"
+  },
+  "input_schema": {
+    "rootNodeId": "string",
+    "eventDescription": "string"
+  },
+  "steps": [
+    {
+      "id": "trace_cascade",
+      "type": "neo4j_query",
+      "config": {
+        "connection": "env:NEO4J_URI",
+        "query": "MATCH path = (root:Node {id: $rootNodeId})-[:SUPPLIES*1..5]->(d:Node) RETURN d.id AS id, d.label AS label, d.type AS type, length(path) AS hops ORDER BY hops ASC",
+        "params": { "rootNodeId": "{{input.rootNodeId}}" }
+      }
+    },
+    {
+      "id": "revenue_exposure",
+      "type": "neo4j_query",
+      "config": {
+        "connection": "env:NEO4J_URI",
+        "query": "MATCH (root:Node {id: $rootNodeId})-[:SUPPLIES*1..5]->(m:Node {type:'market'}) RETURN sum(m.weeklyRevenue) AS weeklyRevenueAtRisk",
+        "params": { "rootNodeId": "{{input.rootNodeId}}" }
+      }
+    },
+    {
+      "id": "find_alternates",
+      "type": "neo4j_query",
+      "config": {
+        "connection": "env:NEO4J_URI",
+        "query": "MATCH (backup:Node)-[:BACKUP_FOR]->(primary:Node {id: $rootNodeId}) RETURN backup.label AS alternateSupplier, backup.leadTimeDays AS leadTime",
+        "params": { "rootNodeId": "{{input.rootNodeId}}" }
+      }
+    },
+    {
+      "id": "generate_reasoning",
+      "type": "llm_call",
+      "config": {
+        "provider": "butterbase_gateway",
+        "model": "claude-sonnet-4-6",
+        "system": "You are a supply chain risk analyst. Given a cascade trace, revenue exposure, and alternate supplier data, write: (1) a one-paragraph plain-English summary of the disruption, (2) 2-3 ranked mitigation options with cost, time, and coverage tradeoffs. Respond as JSON only.",
+        "input": {
+          "event": "{{input.eventDescription}}",
+          "cascade": "{{steps.trace_cascade.output}}",
+          "revenue_at_risk": "{{steps.revenue_exposure.output}}",
+          "alternates": "{{steps.find_alternates.output}}"
+        }
+      }
+    },
+    {
+      "id": "persist_incident",
+      "type": "http_call",
+      "config": {
+        "method": "POST",
+        "url": "env:BUTTERBASE_API_URL/incidents",
+        "headers": { "Authorization": "Bearer {{env.BUTTERBASE_SERVICE_KEY}}" },
+        "body": {
+          "rootNodeId": "{{input.rootNodeId}}",
+          "cascade": "{{steps.trace_cascade.output}}",
+          "revenueAtRisk": "{{steps.revenue_exposure.output}}",
+          "reasoning": "{{steps.generate_reasoning.output}}",
+          "status": "active"
+        }
+      }
+    }
+  ],
+  "output": {
+    "cascade": "{{steps.trace_cascade.output}}",
+    "revenueAtRisk": "{{steps.revenue_exposure.output}}",
+    "mitigations": "{{steps.generate_reasoning.output}}",
+    "incidentId": "{{steps.persist_incident.output.id}}"
+  },
+  "deployment": {
+    "target": "cloud.rocketride.ai",
+    "note": "Deploy via: rocketride deploy --pipeline fathom-disruption-response.json — the frontend calls the resulting managed endpoint, not the local pipeline."
+  }
+}
